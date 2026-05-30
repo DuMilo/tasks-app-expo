@@ -1,6 +1,8 @@
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 const baseURL = process.env.EXPO_PUBLIC_API_URL;
+const SESSION_TOKEN_KEY = 'sessionToken';
 
 interface SignupPayload {
   name: string;
@@ -37,4 +39,30 @@ export const login = async (payload: LoginPayload) => {
 
 export const setSessionToken = (sessionToken: string) => {
   axios.defaults.headers.common.Authorization = `Bearer ${sessionToken}`;
+};
+
+export const saveSessionToken = async (sessionToken: string) => {
+  await SecureStore.setItemAsync(SESSION_TOKEN_KEY, sessionToken);
+  setSessionToken(sessionToken);
+};
+
+export const getStoredSessionToken = async () => {
+  return SecureStore.getItemAsync(SESSION_TOKEN_KEY);
+};
+
+export const deleteStoredSessionToken = async () => {
+  await SecureStore.deleteItemAsync(SESSION_TOKEN_KEY);
+  delete axios.defaults.headers.common.Authorization;
+};
+
+export const validateSessionToken = async (sessionToken: string) => {
+  setSessionToken(sessionToken);
+
+  try {
+    await axios.get(`${baseURL}`);
+    return true;
+  } catch (err) {
+    await deleteStoredSessionToken();
+    return false;
+  }
 };

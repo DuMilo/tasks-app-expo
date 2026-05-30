@@ -9,7 +9,7 @@ import AboutScreen from './src/components/AboutScreen';
 import { useTaskStore } from './src/store/useTaskStore';
 import LoginScreen from './src/components/LoginScreen';
 import SignupScreen from './src/components/SignupScreen';
-import { login, setSessionToken, signup } from './src/utils/auth-api';
+import { getStoredSessionToken, login, saveSessionToken, signup, validateSessionToken } from './src/utils/auth-api';
 
 type AuthScreen = 'login' | 'signup' | 'tasks';
 
@@ -30,6 +30,7 @@ export default function App() {
   const [logoError, setLogoError] = useState(false);
   const [authScreen, setAuthScreen] = useState<AuthScreen>('login');
   const [authLoading, setAuthLoading] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [authError, setAuthError] = useState("");
   const [sessionToken, setSessionTokenState] = useState("");
 
@@ -39,6 +40,35 @@ export default function App() {
   const [dueDate, setDueDate] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [priority, setPriority] = useState<'Baixa' | 'Média' | 'Alta'>('Baixa');
+
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        const storedToken = await getStoredSessionToken();
+
+        if (!storedToken) {
+          setAuthScreen('login');
+          return;
+        }
+
+        const isValid = await validateSessionToken(storedToken);
+
+        if (isValid) {
+          setSessionTokenState(storedToken);
+          setAuthScreen('tasks');
+        } else {
+          setAuthScreen('login');
+        }
+      } catch (err) {
+        console.log(err);
+        setAuthScreen('login');
+      } finally {
+        setAuthChecking(false);
+      }
+    };
+
+    restoreSession();
+  }, []);
 
   useEffect(() => {
     if (authScreen === 'tasks' && sessionToken) {
@@ -100,7 +130,7 @@ export default function App() {
       const response = await signup({ name, email, password });
 
       if (response.sessionToken) {
-        setSessionToken(response.sessionToken);
+        await saveSessionToken(response.sessionToken);
         setSessionTokenState(response.sessionToken);
         setAuthScreen('tasks');
         return;
@@ -126,7 +156,7 @@ export default function App() {
         return;
       }
 
-      setSessionToken(response.sessionToken);
+      await saveSessionToken(response.sessionToken);
       setSessionTokenState(response.sessionToken);
       setAuthScreen('tasks');
     } catch (err: any) {
@@ -135,6 +165,18 @@ export default function App() {
       setAuthLoading(false);
     }
   };
+
+  if (authChecking) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.authCheckingContainer}>
+          <ActivityIndicator size="large" color="#000" />
+          <Text style={styles.authCheckingText}>Verificando sessao...</Text>
+        </View>
+        <StatusBar style="auto" />
+      </SafeAreaView>
+    );
+  }
 
   if (authScreen === 'login') {
     return (
@@ -480,6 +522,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: 'rgba(255, 255, 255, 0.7)',
     zIndex: 10,
+  },
+  authCheckingContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  authCheckingText: {
+    color: '#666',
+    fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
