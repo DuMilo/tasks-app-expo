@@ -77,6 +77,13 @@ export default function App() {
   }, [authScreen, fetchTasks, sessionToken]);
 
   useEffect(() => {
+    if (!authChecking && authScreen === 'tasks' && !sessionToken) {
+      setAuthError('Acesso negado. Faca login para continuar.');
+      setAuthScreen('login');
+    }
+  }, [authChecking, authScreen, sessionToken]);
+
+  useEffect(() => {
     if (!editingTask) return;
 
     setIsUpdating(true);
@@ -209,6 +216,20 @@ export default function App() {
           onSubmit={handleSignup}
           loading={authLoading}
           error={authError}
+        />
+        <StatusBar style="auto" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!sessionToken) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <LoginScreen
+          onGoToSignup={goToSignup}
+          onSubmit={handleLogin}
+          loading={authLoading}
+          error={authError || 'Acesso negado. Faca login para continuar.'}
         />
         <StatusBar style="auto" />
       </SafeAreaView>
