@@ -1,12 +1,20 @@
+import { useState } from 'react';
 import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { globalStyles } from '../styles/global';
 
 interface SignupScreenProps {
   onGoToLogin: () => void;
-  onSubmit: () => void;
+  onSubmit: (name: string, email: string, password: string) => void;
+  loading?: boolean;
+  error?: string;
 }
 
-export default function SignupScreen({ onGoToLogin, onSubmit }: SignupScreenProps) {
+export default function SignupScreen({ onGoToLogin, onSubmit, loading = false, error }: SignupScreenProps) {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const disabled = loading || !name.trim() || !email.trim() || !password.trim();
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Criar Conta</Text>
@@ -18,6 +26,8 @@ export default function SignupScreen({ onGoToLogin, onSubmit }: SignupScreenProp
           placeholder="Nome"
           autoCapitalize="words"
           autoComplete="name"
+          value={name}
+          onChangeText={setName}
         />
         <TextInput
           style={styles.input}
@@ -25,6 +35,8 @@ export default function SignupScreen({ onGoToLogin, onSubmit }: SignupScreenProp
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
+          value={email}
+          onChangeText={setEmail}
         />
         <TextInput
           style={styles.input}
@@ -32,15 +44,24 @@ export default function SignupScreen({ onGoToLogin, onSubmit }: SignupScreenProp
           secureTextEntry
           autoCapitalize="none"
           autoComplete="new-password"
+          value={password}
+          onChangeText={setPassword}
         />
 
-        <TouchableOpacity style={styles.primaryButton} activeOpacity={0.8} onPress={onSubmit}>
-          <Text style={styles.primaryButtonText}>Criar Conta</Text>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+        <TouchableOpacity
+          style={[styles.primaryButton, disabled && styles.primaryButtonDisabled]}
+          activeOpacity={0.8}
+          onPress={() => onSubmit(name.trim(), email.trim(), password)}
+          disabled={disabled}
+        >
+          <Text style={styles.primaryButtonText}>{loading ? 'Criando...' : 'Criar Conta'}</Text>
         </TouchableOpacity>
       </View>
 
       <TouchableOpacity onPress={onGoToLogin} activeOpacity={0.7}>
-        <Text style={styles.linkText}>Já tem uma conta? Entrar</Text>
+        <Text style={styles.linkText}>Ja tem uma conta? Entrar</Text>
       </TouchableOpacity>
     </View>
   );
@@ -90,6 +111,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 6,
   },
+  primaryButtonDisabled: {
+    backgroundColor: '#999',
+  },
   primaryButtonText: {
     color: '#fff',
     fontSize: 16,
@@ -99,6 +123,11 @@ const styles = StyleSheet.create({
     color: globalStyles.primaryColor,
     fontSize: 15,
     fontWeight: '600',
+    textAlign: 'center',
+  },
+  errorText: {
+    color: '#d9363e',
+    fontSize: 14,
     textAlign: 'center',
   },
 });

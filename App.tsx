@@ -9,6 +9,7 @@ import AboutScreen from './src/components/AboutScreen';
 import { useTaskStore } from './src/store/useTaskStore';
 import LoginScreen from './src/components/LoginScreen';
 import SignupScreen from './src/components/SignupScreen';
+import { login, setSessionToken, signup } from './src/utils/auth-api';
 
 type AuthScreen = 'login' | 'signup' | 'tasks';
 
@@ -28,6 +29,9 @@ export default function App() {
   const [taskId, setTaskId] = useState("");
   const [logoError, setLogoError] = useState(false);
   const [authScreen, setAuthScreen] = useState<AuthScreen>('login');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [sessionToken, setSessionTokenState] = useState("");
 
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -37,8 +41,10 @@ export default function App() {
   const [priority, setPriority] = useState<'Baixa' | 'Média' | 'Alta'>('Baixa');
 
   useEffect(() => {
-    fetchTasks();
-  }, [fetchTasks]);
+    if (authScreen === 'tasks' && sessionToken) {
+      fetchTasks();
+    }
+  }, [authScreen, fetchTasks, sessionToken]);
 
   useEffect(() => {
     if (!editingTask) return;
@@ -76,12 +82,68 @@ export default function App() {
     if (selectedDate) setDueDate(selectedDate);
   };
 
+  const goToSignup = () => {
+    setAuthError("");
+    setAuthScreen('signup');
+  };
+
+  const goToLogin = () => {
+    setAuthError("");
+    setAuthScreen('login');
+  };
+
+  const handleSignup = async (name: string, email: string, password: string) => {
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const response = await signup({ name, email, password });
+
+      if (response.sessionToken) {
+        setSessionToken(response.sessionToken);
+        setSessionTokenState(response.sessionToken);
+        setAuthScreen('tasks');
+        return;
+      }
+
+      setAuthScreen('login');
+    } catch (err: any) {
+      setAuthError(err?.response?.data?.message || 'Nao foi possivel criar sua conta.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogin = async (email: string, password: string) => {
+    setAuthLoading(true);
+    setAuthError("");
+
+    try {
+      const response = await login({ email, password });
+
+      if (!response.sessionToken) {
+        setAuthError('Login realizado, mas a API nao retornou um token de sessao.');
+        return;
+      }
+
+      setSessionToken(response.sessionToken);
+      setSessionTokenState(response.sessionToken);
+      setAuthScreen('tasks');
+    } catch (err: any) {
+      setAuthError(err?.response?.data?.message || 'E-mail ou senha invalidos.');
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
   if (authScreen === 'login') {
     return (
       <SafeAreaView style={styles.safeArea}>
         <LoginScreen
-          onGoToSignup={() => setAuthScreen('signup')}
-          onSubmit={() => setAuthScreen('tasks')}
+          onGoToSignup={goToSignup}
+          onSubmit={handleLogin}
+          loading={authLoading}
+          error={authError}
         />
         <StatusBar style="auto" />
       </SafeAreaView>
@@ -92,8 +154,10 @@ export default function App() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <SignupScreen
-          onGoToLogin={() => setAuthScreen('login')}
-          onSubmit={() => setAuthScreen('tasks')}
+          onGoToLogin={goToLogin}
+          onSubmit={handleSignup}
+          loading={authLoading}
+          error={authError}
         />
         <StatusBar style="auto" />
       </SafeAreaView>
