@@ -9,7 +9,7 @@ import AboutScreen from './src/components/AboutScreen';
 import { useTaskStore } from './src/store/useTaskStore';
 import LoginScreen from './src/components/LoginScreen';
 import SignupScreen from './src/components/SignupScreen';
-import { getStoredSessionToken, login, saveSessionToken, signup, validateSessionToken } from './src/utils/auth-api';
+import { deleteStoredSessionToken, getStoredSessionToken, login, saveSessionToken, signup, validateSessionToken } from './src/utils/auth-api';
 
 type AuthScreen = 'login' | 'signup' | 'tasks';
 
@@ -166,6 +166,15 @@ export default function App() {
     }
   };
 
+  const handleLogout = async () => {
+    await deleteStoredSessionToken();
+    setSessionTokenState("");
+    setAuthError("");
+    clearTasks();
+    resetForm();
+    setAuthScreen('login');
+  };
+
   if (authChecking) {
     return (
       <SafeAreaView style={styles.safeArea}>
@@ -220,6 +229,9 @@ export default function App() {
             />
           )}
           {!logoError && <Text style={styles.header}>Tarefas</Text>}
+          <TouchableOpacity style={styles.logoutButton} onPress={handleLogout} activeOpacity={0.8}>
+            <Text style={styles.logoutButtonText}>Sair</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.counterContainer}>
@@ -423,6 +435,19 @@ const styles = StyleSheet.create({
   header: {
     textAlign: 'center',
     fontSize: 24,
+    fontWeight: 'bold',
+  },
+  logoutButton: {
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: '#000',
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 18,
+  },
+  logoutButtonText: {
+    color: '#000',
+    fontSize: 14,
     fontWeight: 'bold',
   },
   counterContainer: {
