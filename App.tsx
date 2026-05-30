@@ -7,6 +7,10 @@ import TaskList from './src/components/TaskList';
 import { globalStyles } from './src/styles/global';
 import AboutScreen from './src/components/AboutScreen';
 import { useTaskStore } from './src/store/useTaskStore';
+import LoginScreen from './src/components/LoginScreen';
+import SignupScreen from './src/components/SignupScreen';
+
+type AuthScreen = 'login' | 'signup' | 'tasks';
 
 export default function App() {
   const tasks = useTaskStore((state) => state.tasks);
@@ -23,6 +27,7 @@ export default function App() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [taskId, setTaskId] = useState("");
   const [logoError, setLogoError] = useState(false);
+  const [authScreen, setAuthScreen] = useState<AuthScreen>('login');
 
   const [aboutModalVisible, setAboutModalVisible] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -70,6 +75,30 @@ export default function App() {
     setShowDatePicker(false);
     if (selectedDate) setDueDate(selectedDate);
   };
+
+  if (authScreen === 'login') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <LoginScreen
+          onGoToSignup={() => setAuthScreen('signup')}
+          onSubmit={() => setAuthScreen('tasks')}
+        />
+        <StatusBar style="auto" />
+      </SafeAreaView>
+    );
+  }
+
+  if (authScreen === 'signup') {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <SignupScreen
+          onGoToLogin={() => setAuthScreen('login')}
+          onSubmit={() => setAuthScreen('tasks')}
+        />
+        <StatusBar style="auto" />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
